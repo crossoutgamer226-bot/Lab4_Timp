@@ -1,30 +1,30 @@
 ﻿namespace Lab4_Timp
 {
+    /// <summary>
+    /// Форма MainForm. Содержит элементы интерфейса и их инициализацию.
+    /// </summary>
     partial class MainForm
     {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer? components = null;
 
         /// <summary>
-        ///  Clean up any resources being used.
+        /// Освобождает ресурсы, используемые формой.
         /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        /// <param name="disposing">True, если требуется освободить управляемые ресурсы.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
             {
                 components.Dispose();
             }
+
             base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
 
         /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
+        /// Метод, автоматически создающий элементы интерфейса формы.
         /// </summary>
         private void InitializeComponent()
         {
@@ -41,20 +41,30 @@
             btnServerDisconnect = new Button();
             btnExit = new Button();
             cmbPath = new ComboBox();
+            btnBack = new Button();
+            btnForward = new Button();
+            btnUp = new Button();
+            txtPath = new TextBox();
+
             groupClient.SuspendLayout();
             groupServer.SuspendLayout();
             SuspendLayout();
+
             // 
             // listFiles
             // 
             listFiles.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             listFiles.FormattingEnabled = true;
             listFiles.ItemHeight = 15;
-            listFiles.Location = new Point(10, 45);
+            listFiles.Location = new Point(10, 75);
             listFiles.Name = "listFiles";
-            listFiles.Size = new Size(320, 454);
+            listFiles.Size = new Size(320, 424);
             listFiles.TabIndex = 1;
-            listFiles.SelectedIndexChanged += listFiles_SelectedIndexChanged;
+
+            // Подключение событий.
+            listFiles.SelectedIndexChanged += ListFiles_SelectedIndexChanged;
+            listFiles.DoubleClick += ListFiles_DoubleClick;
+
             // 
             // groupClient
             // 
@@ -66,7 +76,8 @@
             groupClient.TabIndex = 2;
             groupClient.TabStop = false;
             groupClient.Text = "Клиентская сторона";
-            groupClient.Enter += groupClient_Enter;
+            groupClient.Enter += GroupClient_Enter;
+
             // 
             // txtClientLog
             // 
@@ -78,7 +89,8 @@
             txtClientLog.ScrollBars = ScrollBars.Vertical;
             txtClientLog.Size = new Size(280, 595);
             txtClientLog.TabIndex = 0;
-            txtClientLog.TextChanged += txtClientLog_TextChanged;
+            txtClientLog.TextChanged += TxtClientLog_TextChanged;
+
             // 
             // groupServer
             // 
@@ -90,7 +102,8 @@
             groupServer.TabIndex = 1;
             groupServer.TabStop = false;
             groupServer.Text = "Серверная сторона";
-            groupServer.Enter += groupServer_Enter;
+            groupServer.Enter += GroupServer_Enter;
+
             // 
             // txtServerLog
             // 
@@ -102,7 +115,8 @@
             txtServerLog.ScrollBars = ScrollBars.Vertical;
             txtServerLog.Size = new Size(280, 595);
             txtServerLog.TabIndex = 0;
-            txtServerLog.TextChanged += txtServerLog_TextChanged;
+            txtServerLog.TextChanged += TxtServerLog_TextChanged;
+
             // 
             // btnSendToServer
             // 
@@ -113,7 +127,8 @@
             btnSendToServer.TabIndex = 1;
             btnSendToServer.Text = "Передать серверу";
             btnSendToServer.UseVisualStyleBackColor = true;
-            btnSendToServer.Click += btnSendToServer_Click;
+            btnSendToServer.Click += BtnSendToServer_Click;
+
             // 
             // btnSendToClient
             // 
@@ -124,7 +139,8 @@
             btnSendToClient.TabIndex = 3;
             btnSendToClient.Text = "Передать клиенту";
             btnSendToClient.UseVisualStyleBackColor = true;
-            btnSendToClient.Click += btnSendToClient_Click;
+            btnSendToClient.Click += BtnSendToClient_Click;
+
             // 
             // lblIp
             // 
@@ -134,7 +150,8 @@
             lblIp.Size = new Size(53, 15);
             lblIp.TabIndex = 4;
             lblIp.Text = "IP-адрес";
-            lblIp.Click += lblIp_Click;
+            lblIp.Click += LblIp_Click;
+
             // 
             // txtIp
             // 
@@ -143,7 +160,8 @@
             txtIp.Size = new Size(120, 23);
             txtIp.TabIndex = 5;
             txtIp.Text = "127.0.0.1";
-            txtIp.TextChanged += txtIp_TextChanged;
+            txtIp.TextChanged += TxtIp_TextChanged;
+
             // 
             // btnDisconnect
             // 
@@ -153,7 +171,8 @@
             btnDisconnect.TabIndex = 6;
             btnDisconnect.Text = "Отключиться";
             btnDisconnect.UseVisualStyleBackColor = true;
-            btnDisconnect.Click += btnDisconnect_Click;
+            btnDisconnect.Click += BtnDisconnect_Click;
+
             // 
             // btnServerDisconnect
             // 
@@ -163,7 +182,8 @@
             btnServerDisconnect.TabIndex = 7;
             btnServerDisconnect.Text = "Сервер отключить";
             btnServerDisconnect.UseVisualStyleBackColor = true;
-            btnServerDisconnect.Click += btnServerDisconnect_Click;
+            btnServerDisconnect.Click += BtnServerDisconnect_Click;
+
             // 
             // btnExit
             // 
@@ -174,7 +194,8 @@
             btnExit.TabIndex = 8;
             btnExit.Text = "Выход";
             btnExit.UseVisualStyleBackColor = true;
-            btnExit.Click += btnExit_Click;
+            btnExit.Click += BtnExit_Click;
+
             // 
             // cmbPath
             // 
@@ -184,13 +205,61 @@
             cmbPath.Name = "cmbPath";
             cmbPath.Size = new Size(320, 23);
             cmbPath.TabIndex = 9;
-            cmbPath.SelectedIndexChanged += cmbPath_SelectedIndexChanged;
+            cmbPath.SelectedIndexChanged += CmbPath_SelectedIndexChanged;
+
+            // 
+            // btnBack
+            // 
+            btnBack.Location = new Point(10, 40);
+            btnBack.Name = "btnBack";
+            btnBack.Size = new Size(75, 23);
+            btnBack.TabIndex = 10;
+            btnBack.Text = "Назад";
+            btnBack.UseVisualStyleBackColor = true;
+            btnBack.Click += BtnBack_Click;
+
+            // 
+            // btnForward
+            // 
+            btnForward.Location = new Point(90, 40);
+            btnForward.Name = "btnForward";
+            btnForward.Size = new Size(75, 23);
+            btnForward.TabIndex = 11;
+            btnForward.Text = "Вперёд";
+            btnForward.UseVisualStyleBackColor = true;
+            btnForward.Click += BtnForward_Click;
+
+            // 
+            // btnUp
+            // 
+            btnUp.Location = new Point(170, 40);
+            btnUp.Name = "btnUp";
+            btnUp.Size = new Size(75, 23);
+            btnUp.TabIndex = 12;
+            btnUp.Text = "Вверх";
+            btnUp.UseVisualStyleBackColor = true;
+            btnUp.Click += BtnUp_Click;
+
+            // 
+            // txtPath
+            // 
+            txtPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtPath.Location = new Point(10, 70);
+            txtPath.Name = "txtPath";
+            txtPath.Size = new Size(320, 23);
+            txtPath.TabIndex = 13;
+            txtPath.KeyDown += TxtPath_KeyDown;
+
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(984, 647);
+            Controls.Add(txtPath);
+            Controls.Add(btnUp);
+            Controls.Add(btnForward);
+            Controls.Add(btnBack);
             Controls.Add(cmbPath);
             Controls.Add(btnExit);
             Controls.Add(btnServerDisconnect);
@@ -206,6 +275,7 @@
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Программа для обмена данными между компьютерами";
+
             groupClient.ResumeLayout(false);
             groupClient.PerformLayout();
             groupServer.ResumeLayout(false);
@@ -215,6 +285,7 @@
         }
 
         #endregion
+
         private ListBox listFiles;
         private GroupBox groupClient;
         private TextBox txtClientLog;
@@ -228,5 +299,9 @@
         private Button btnServerDisconnect;
         private Button btnExit;
         private ComboBox cmbPath;
+        private Button btnBack;
+        private Button btnForward;
+        private Button btnUp;
+        private TextBox txtPath;
     }
 }

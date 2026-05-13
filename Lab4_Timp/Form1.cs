@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -8,7 +9,8 @@ using System.Windows.Forms;
 namespace Lab4_Timp
 {
     /// <summary>
-    /// Главная форма приложения, реализующая функциональность клиента и сервера.
+    /// Главная форма приложения, реализующая функциональность клиента и сервера,
+    /// а также навигацию по файловой системе.
     /// </summary>
     public partial class MainForm : Form
     {
@@ -20,13 +22,37 @@ namespace Lab4_Timp
 
         private bool serverRunning;
 
+        // Стек истории переходов назад.
+        private readonly Stack<string> backHistory = new Stack<string>();
+
+        // Стек истории переходов вперёд.
+        private readonly Stack<string> forwardHistory = new Stack<string>();
+
+        // Текущий путь.
+        private string currentPath = string.Empty;
+
+        /// <summary>
+        /// Инициализирует форму, загружает диски и запускает сервер.
+        /// </summary>
         public MainForm()
         {
             InitializeComponent();
             LoadDrives();
             StartServer();
+
+            // Установка начального пути.
+            string[] drives = Directory.GetLogicalDrives();
+
+            if (drives.Length > 0)
+            {
+                currentPath = drives[0];
+                OpenDirectory(currentPath, addToHistory: false);
+            }
         }
 
+        /// <summary>
+        /// Загружает список логических дисков в ComboBox.
+        /// </summary>
         private void LoadDrives()
         {
             cmbPath.Items.Clear();
@@ -42,42 +68,64 @@ namespace Lab4_Timp
             }
         }
 
-        private void LoadFiles(string path)
+        /// <summary>
+        /// Открывает каталог, обновляет список файлов и историю переходов.
+        /// </summary>
+        /// <param name="path">Путь к каталогу.</param>
+        /// <param name="addToHistory">Добавлять ли путь в историю.</param>
+        private void OpenDirectory(string path, bool addToHistory = true)
         {
             try
             {
-                listFiles.Items.Clear();
-
-                string[] dirs = Directory.GetDirectories(path);
-                string[] files = Directory.GetFiles(path);
-
-                foreach (string directory in dirs)
+                if (!Directory.Exists(path))
                 {
-                    listFiles.Items.Add(directory);
+                    txtClientLog.AppendText($"Каталог не существует: {path}.\r\n");
+                    return;
                 }
 
-                foreach (string file in files)
+                listFiles.Items.Clear();
+
+                foreach (string dir in Directory.GetDirectories(path))
+                {
+                    listFiles.Items.Add(dir);
+                }
+
+                foreach (string file in Directory.GetFiles(path))
                 {
                     listFiles.Items.Add(file);
                 }
+
+                if (addToHistory && currentPath != string.Empty)
+                {
+                    backHistory.Push(currentPath);
+                }
+
+                currentPath = path;
+                txtPath.Text = path;
+
+                forwardHistory.Clear();
             }
             catch (Exception ex)
             {
-                txtClientLog.AppendText($"Ошибка загрузки файлов: {ex.Message}.\r\n");
+                txtClientLog.AppendText($"Ошибка: {ex.Message}.\r\n");
             }
         }
 
-        private void cmbPath_SelectedIndexChanged(object? sender, EventArgs e)
+        /// <summary>
+        /// Обработчик выбора диска.
+        /// </summary>
+        private void CmbPath_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            string? path = cmbPath.SelectedItem as string;
-
-            if (path != null)
+            if (cmbPath.SelectedItem is string path)
             {
-                LoadFiles(path);
+                OpenDirectory(path);
             }
         }
 
-        private void listFiles_DoubleClick(object? sender, EventArgs e)
+        /// <summary>
+        /// Обработчик двойного клика по элементу списка файлов.
+        /// </summary>
+        private void ListFiles_DoubleClick(object? sender, EventArgs e)
         {
             if (listFiles.SelectedItem is not string path)
             {
@@ -86,11 +134,100 @@ namespace Lab4_Timp
 
             if (Directory.Exists(path))
             {
-                cmbPath.Text = path;
-                LoadFiles(path);
+                OpenDirectory(path);
+            }
+            else if (File.Exists(path))
+            {
+                ConnectClient();
+
+                byte[] data = Encoding.UTF8.GetBytes(path);
+                clientStream?.Write(data, 0, data.Length);
+
+                txtClientLog.AppendText($"Отправлено серверу: {path}.\r\n");
             }
         }
 
+        /// <summary>
+        /// Обработчик ввода пути вручную.
+        /// </summary>
+        private void TxtPath_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                string path = txtPath.Text.Trim();
+
+                if (Directory.Exists(path))
+                {
+                    OpenDirectory(path);
+                }
+                else
+                {
+                    txtClientLog.AppendText($"Каталог не найден: {path}.\r\n");
+                }
+            }
+        }
+
+        // -----------------------------
+        // НАВИГАЦИЯ
+        // -----------------------------
+
+        /// <summary>
+        /// Переход назад по истории.
+        /// </summary>
+        private void BtnBack_Click(object sender, EventArgs e)
+        {
+            if (backHistory.Count == 0)
+            {
+                return;
+            }
+
+            forwardHistory.Push(currentPath);
+
+            string previous = backHistory.Pop();
+            OpenDirectory(previous, addToHistory: false);
+        }
+
+        /// <summary>
+        /// Переход вперёд по истории.
+        /// </summary>
+        private void BtnForward_Click(object sender, EventArgs e)
+        {
+            if (forwardHistory.Count == 0)
+            {
+                return;
+            }
+
+            backHistory.Push(currentPath);
+
+            string next = forwardHistory.Pop();
+            OpenDirectory(next, addToHistory: false);
+        }
+
+        /// <summary>
+        /// Переход на уровень вверх.
+        /// </summary>
+        private void BtnUp_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(currentPath))
+            {
+                return;
+            }
+
+            string? parent = Directory.GetParent(currentPath)?.FullName;
+
+            if (parent != null)
+            {
+                OpenDirectory(parent);
+            }
+        }
+
+        // -----------------------------
+        // СЕРВЕР
+        // -----------------------------
+
+        /// <summary>
+        /// Запускает сервер.
+        /// </summary>
         private void StartServer()
         {
             try
@@ -109,6 +246,9 @@ namespace Lab4_Timp
             }
         }
 
+        /// <summary>
+        /// Обрабатывает подключение клиента.
+        /// </summary>
         private void OnClientConnected(IAsyncResult ar)
         {
             try
@@ -128,18 +268,24 @@ namespace Lab4_Timp
 
                 string drives = string.Join(",", Directory.GetLogicalDrives());
                 byte[] data = Encoding.UTF8.GetBytes(drives);
+
                 serverStream.Write(data, 0, data.Length);
 
                 byte[] buffer = new byte[4096];
+
                 serverStream.BeginRead(buffer, 0, buffer.Length, OnServerDataReceived, buffer);
 
                 server.BeginAcceptTcpClient(OnClientConnected, null);
             }
             catch
             {
+                // Игнорируем ошибки.
             }
         }
 
+        /// <summary>
+        /// Обрабатывает данные, полученные сервером.
+        /// </summary>
         private void OnServerDataReceived(IAsyncResult ar)
         {
             try
@@ -172,14 +318,8 @@ namespace Lab4_Timp
 
                 if (received == "exit")
                 {
-                    Invoke(new Action(() =>
-                    {
-                        txtServerLog.AppendText("Клиент запросил отключение.\r\n");
-                    }));
-
                     serverStream.Close();
                     serverStream = null;
-
                     return;
                 }
 
@@ -203,9 +343,13 @@ namespace Lab4_Timp
             }
             catch
             {
+                // Игнорируем ошибки.
             }
         }
 
+        /// <summary>
+        /// Отправляет список дисков клиенту.
+        /// </summary>
         private void SendDrivesToClient()
         {
             if (serverStream == null)
@@ -222,11 +366,18 @@ namespace Lab4_Timp
             txtServerLog.AppendText("Сервер отправил список дисков клиенту.\r\n");
         }
 
-        private void btnSendToClient_Click(object? sender, EventArgs e)
+        private void BtnSendToClient_Click(object? sender, EventArgs e)
         {
             SendDrivesToClient();
         }
 
+        // -----------------------------
+        // КЛИЕНТ
+        // -----------------------------
+
+        /// <summary>
+        /// Подключает клиента к серверу.
+        /// </summary>
         private void ConnectClient()
         {
             if (client != null && client.Connected)
@@ -242,9 +393,13 @@ namespace Lab4_Timp
             txtClientLog.AppendText($"Клиент подключён {DateTime.Now}.\r\n");
 
             byte[] buffer = new byte[4096];
+
             clientStream.BeginRead(buffer, 0, buffer.Length, OnClientDataReceived, buffer);
         }
 
+        /// <summary>
+        /// Обрабатывает данные, полученные клиентом.
+        /// </summary>
         private void OnClientDataReceived(IAsyncResult ar)
         {
             try
@@ -279,10 +434,14 @@ namespace Lab4_Timp
             }
             catch
             {
+                // Игнорируем ошибки.
             }
         }
 
-        private void btnSendToServer_Click(object? sender, EventArgs e)
+        /// <summary>
+        /// Отправляет выбранный путь серверу.
+        /// </summary>
+        private void BtnSendToServer_Click(object? sender, EventArgs e)
         {
             if (listFiles.SelectedItem is not string path)
             {
@@ -298,7 +457,10 @@ namespace Lab4_Timp
             txtClientLog.AppendText($"Отправлено серверу: {path}.\r\n");
         }
 
-        private void btnDisconnect_Click(object? sender, EventArgs e)
+        /// <summary>
+        /// Отключает клиента.
+        /// </summary>
+        private void BtnDisconnect_Click(object? sender, EventArgs e)
         {
             try
             {
@@ -315,47 +477,55 @@ namespace Lab4_Timp
             }
             catch
             {
+                // Игнорируем ошибки.
             }
         }
 
-        private void btnExit_Click(object? sender, EventArgs e)
+        /// <summary>
+        /// Закрывает приложение.
+        /// </summary>
+        private void BtnExit_Click(object? sender, EventArgs e)
         {
             Close();
         }
 
         // -----------------------------
-        // ПУСТЫЕ ОБРАБОТЧИКИ ДЛЯ DESIGNER
+        // ПУСТЫЕ ОБРАБОТЧИКИ
         // -----------------------------
 
-        private void listFiles_SelectedIndexChanged(object? sender, EventArgs e)
+        private void ListFiles_SelectedIndexChanged(object? sender, EventArgs e)
         {
         }
 
-        private void groupClient_Enter(object? sender, EventArgs e)
+        private void GroupClient_Enter(object? sender, EventArgs e)
         {
         }
 
-        private void txtClientLog_TextChanged(object? sender, EventArgs e)
+        private void TxtClientLog_TextChanged(object? sender, EventArgs e)
         {
         }
 
-        private void groupServer_Enter(object? sender, EventArgs e)
+        private void GroupServer_Enter(object? sender, EventArgs e)
         {
         }
 
-        private void txtServerLog_TextChanged(object? sender, EventArgs e)
+        private void TxtServerLog_TextChanged(object? sender, EventArgs e)
         {
         }
 
-        private void lblIp_Click(object? sender, EventArgs e)
+        private void LblIp_Click(object? sender, EventArgs e)
         {
         }
 
-        private void txtIp_TextChanged(object? sender, EventArgs e)
+        private void TxtIp_TextChanged(object? sender, EventArgs e)
         {
         }
 
-        private void btnServerDisconnect_Click(object? sender, EventArgs e)
+        private void BtnServerDisconnect_Click(object? sender, EventArgs e)
+        {
+        }
+
+        private void TxtPath_TextChanged(object? sender, EventArgs e)
         {
         }
     }
