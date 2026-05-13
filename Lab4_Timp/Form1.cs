@@ -20,9 +20,6 @@ namespace Lab4_Timp
 
         private bool serverRunning;
 
-        /// <summary>
-        /// Инициализирует новый экземпляр класса <see cref="MainForm"/>.
-        /// </summary>
         public MainForm()
         {
             InitializeComponent();
@@ -30,9 +27,6 @@ namespace Lab4_Timp
             StartServer();
         }
 
-        /// <summary>
-        /// Загружает список логических дисков в комбобокс.
-        /// </summary>
         private void LoadDrives()
         {
             cmbPath.Items.Clear();
@@ -48,10 +42,6 @@ namespace Lab4_Timp
             }
         }
 
-        /// <summary>
-        /// Загружает список файлов и каталогов по указанному пути.
-        /// </summary>
-        /// <param name="path">Путь к каталогу.</param>
         private void LoadFiles(string path)
         {
             try
@@ -101,9 +91,6 @@ namespace Lab4_Timp
             }
         }
 
-        /// <summary>
-        /// Запускает сервер и начинает ожидание подключений.
-        /// </summary>
         private void StartServer()
         {
             try
@@ -122,9 +109,6 @@ namespace Lab4_Timp
             }
         }
 
-        /// <summary>
-        /// Обрабатывает подключение клиента к серверу.
-        /// </summary>
         private void OnClientConnected(IAsyncResult ar)
         {
             try
@@ -144,7 +128,6 @@ namespace Lab4_Timp
 
                 string drives = string.Join(",", Directory.GetLogicalDrives());
                 byte[] data = Encoding.UTF8.GetBytes(drives);
-
                 serverStream.Write(data, 0, data.Length);
 
                 byte[] buffer = new byte[4096];
@@ -154,13 +137,9 @@ namespace Lab4_Timp
             }
             catch
             {
-                // Ошибка игнорируется.
             }
         }
 
-        /// <summary>
-        /// Обрабатывает данные, полученные сервером.
-        /// </summary>
         private void OnServerDataReceived(IAsyncResult ar)
         {
             try
@@ -224,28 +203,30 @@ namespace Lab4_Timp
             }
             catch
             {
-                // Ошибка игнорируется.
             }
         }
 
-        private void btnServerDisconnect_Click(object? sender, EventArgs e)
+        private void SendDrivesToClient()
         {
-            try
+            if (serverStream == null)
             {
-                serverRunning = false;
-                server?.Stop();
+                txtServerLog.AppendText("Нет подключённого клиента.\r\n");
+                return;
+            }
 
-                txtServerLog.AppendText($"Сервер отключён {DateTime.Now}.\r\n");
-            }
-            catch
-            {
-                // Ошибка игнорируется.
-            }
+            string drives = string.Join(",", Directory.GetLogicalDrives());
+            byte[] data = Encoding.UTF8.GetBytes(drives);
+
+            serverStream.Write(data, 0, data.Length);
+
+            txtServerLog.AppendText("Сервер отправил список дисков клиенту.\r\n");
         }
 
-        /// <summary>
-        /// Подключает клиента к серверу.
-        /// </summary>
+        private void btnSendToClient_Click(object? sender, EventArgs e)
+        {
+            SendDrivesToClient();
+        }
+
         private void ConnectClient()
         {
             if (client != null && client.Connected)
@@ -264,9 +245,6 @@ namespace Lab4_Timp
             clientStream.BeginRead(buffer, 0, buffer.Length, OnClientDataReceived, buffer);
         }
 
-        /// <summary>
-        /// Обрабатывает данные, полученные клиентом.
-        /// </summary>
         private void OnClientDataReceived(IAsyncResult ar)
         {
             try
@@ -301,7 +279,6 @@ namespace Lab4_Timp
             }
             catch
             {
-                // Ошибка игнорируется.
             }
         }
 
@@ -321,11 +298,6 @@ namespace Lab4_Timp
             txtClientLog.AppendText($"Отправлено серверу: {path}.\r\n");
         }
 
-        private void btnSendToClient_Click(object? sender, EventArgs e)
-        {
-            txtClientLog.AppendText("Кнопка 'Передать клиенту' нажата. Функция не реализована.\r\n");
-        }
-
         private void btnDisconnect_Click(object? sender, EventArgs e)
         {
             try
@@ -343,7 +315,6 @@ namespace Lab4_Timp
             }
             catch
             {
-                // Ошибка игнорируется.
             }
         }
 
@@ -351,6 +322,10 @@ namespace Lab4_Timp
         {
             Close();
         }
+
+        // -----------------------------
+        // ПУСТЫЕ ОБРАБОТЧИКИ ДЛЯ DESIGNER
+        // -----------------------------
 
         private void listFiles_SelectedIndexChanged(object? sender, EventArgs e)
         {
@@ -372,11 +347,15 @@ namespace Lab4_Timp
         {
         }
 
+        private void lblIp_Click(object? sender, EventArgs e)
+        {
+        }
+
         private void txtIp_TextChanged(object? sender, EventArgs e)
         {
         }
 
-        private void lblIp_Click(object? sender, EventArgs e)
+        private void btnServerDisconnect_Click(object? sender, EventArgs e)
         {
         }
     }
